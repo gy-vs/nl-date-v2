@@ -316,6 +316,86 @@ test("Test - Weekday Overlap", function () {
     });
 });
 
+test("Test - Weekday 'of next/last/this week' expression", function () {
+    const refDate = new Date(2024, 3 - 1, 5, 8); // Tuesday
+
+    testSingleCase(chrono.casual, "Friday of next week", refDate, (result) => {
+        expect(result.text).toBe("Friday of next week");
+        expect(result.start.get("year")).toBe(2024);
+        expect(result.start.get("month")).toBe(3);
+        expect(result.start.get("day")).toBe(15);
+        expect(result.start.get("weekday")).toBe(5);
+        expect(result.start.isCertain("weekday")).toBe(true);
+        expect(result.start).toBeDate(new Date(2024, 3 - 1, 15, 12));
+    });
+
+    testSingleCase(chrono.casual, "Tuesday of next week", refDate, (result) => {
+        expect(result.text).toBe("Tuesday of next week");
+        expect(result.start.get("day")).toBe(12);
+        expect(result.start.get("weekday")).toBe(2);
+        expect(result.start.isCertain("weekday")).toBe(true);
+    });
+
+    testSingleCase(chrono.casual, "Tuesday of next week after 2pm", refDate, (result) => {
+        expect(result.text).toBe("Tuesday of next week after 2pm");
+        expect(result.start.get("day")).toBe(12);
+        expect(result.start.get("weekday")).toBe(2);
+        expect(result.start.get("hour")).toBe(14);
+        expect(result.start.isCertain("weekday")).toBe(true);
+    });
+
+    testSingleCase(chrono.casual, "Wednesday of this week", refDate, (result) => {
+        expect(result.text).toBe("Wednesday of this week");
+        expect(result.start.get("day")).toBe(6);
+        expect(result.start.get("weekday")).toBe(3);
+    });
+
+    testSingleCase(chrono.casual, "Monday of last week", refDate, (result) => {
+        expect(result.text).toBe("Monday of last week");
+        expect(result.start.get("month")).toBe(3);
+        expect(result.start.get("day")).toBe(4);
+        expect(result.start.get("weekday")).toBe(1);
+    });
+});
+
+test("Test - Weekday with relative week expression keeps weekday and date consistent", function () {
+    const refDate = new Date(2024, 3 - 1, 5, 8); // Tuesday
+
+    testSingleCase(chrono.casual, "Saturday in 3 weeks", refDate, (result) => {
+        expect(result.text).toBe("Saturday in 3 weeks");
+        expect(result.start.get("year")).toBe(2024);
+        expect(result.start.get("month")).toBe(3);
+        expect(result.start.get("day")).toBe(30);
+        expect(result.start.get("weekday")).toBe(6);
+        expect(result.start.isCertain("weekday")).toBe(true);
+        expect(result.start).toBeDate(new Date(2024, 3 - 1, 30, 8));
+    });
+
+    testSingleCase(chrono.casual, "Monday 2 weeks ago", refDate, (result) => {
+        expect(result.text).toBe("Monday 2 weeks ago");
+        expect(result.start.get("year")).toBe(2024);
+        expect(result.start.get("month")).toBe(2);
+        expect(result.start.get("day")).toBe(19);
+        expect(result.start.get("weekday")).toBe(1);
+        expect(result.start.isCertain("weekday")).toBe(true);
+        expect(result.start).toBeDate(new Date(2024, 2 - 1, 19, 8));
+    });
+
+    testSingleCase(chrono.casual, "Sunday 12/7/2014", refDate, (result) => {
+        expect(result.start.get("year")).toBe(2014);
+        expect(result.start.get("month")).toBe(12);
+        expect(result.start.get("day")).toBe(7);
+        expect(result.start.get("weekday")).toBe(0);
+        expect(result.start.isCertain("weekday")).toBe(true);
+    });
+
+    testSingleCase(chrono.casual, "Friday 3 days later", refDate, (result) => {
+        expect(result.start.get("day")).toBe(8);
+        expect(result.start.get("weekday")).toBe(5);
+        expect(result.start.isCertain("weekday")).toBe(true);
+    });
+});
+
 test("Test - Weekday range", () => {
     testSingleCase(chrono.casual, "Friday to Monday", new Date(2023, 4 - 1, 9) /*Sunday*/, (result) => {
         expect(result.start.get("year")).toBe(2023);

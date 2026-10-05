@@ -215,6 +215,7 @@ export class ParsingComponents implements ParsedComponents {
             component.impliedValues[key as Component] = this.impliedValues[key as Component];
         }
 
+        component._tags = new Set(this._tags);
         return component;
     }
 

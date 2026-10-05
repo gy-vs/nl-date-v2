@@ -3,6 +3,59 @@ import { ParsingComponents, ReferenceWithTimezone } from "../results";
 import { implySimilarTime } from "../utils/dates";
 
 /**
+ * Merges a `weekday` into components carrying a date, keeping the resulting
+ * weekday and date consistent:
+ *
+ * - When the date falls on the given weekday (e.g. "Sunday 12/7/2014"), the
+ *   weekday is assigned as a certain component.
+ * - When merging into a relative date (e.g. "Saturday in 3 weeks" or
+ *   "Monday 2 weeks ago"), the relative expression only pins down a point in
+ *   time while the weekday is the relevant part, so the date is shifted within
+ *   the same (Monday-starting) week and the weekday is assigned as certain.
+ *   Such relative components carry the "result/relativeDate" tag.
+ * - When merging into an explicit date whose weekday annotation does not match
+ *   (e.g. "Tuesday, January 10" where January 10 is not a Tuesday), the explicit
+ *   date always wins. The conflicting weekday is only implied, so it stays
+ *   readable from the result but is not a certain component contradicting the date.
+ */
+export function assignWeekdayAndConsistentDate(components: ParsingComponents, weekday: Weekday): void {
+    const currentDate = components.dayjs();
+    if (currentDate.day() == weekday) {
+        components.assign("weekday", weekday);
+        return;
+    }
+
+    if (!components.tags().has("result/relativeDate") && !components.tags().has("result/relativeDateAndTime")) {
+        // An explicitly stated date always wins over a conflicting weekday annotation.
+        // Keep the annotation readable, but do not mark it as a certain component.
+        components.imply("weekday", weekday);
+        return;
+    }
+
+    // Shift the relative date within the same (Monday-starting) week to the matching weekday.
+    components.assign("weekday", weekday);
+    const mondayBasedCurrentWeekday = currentDate.day() == 0 ? 6 : currentDate.day() - 1;
+    const mondayBasedTargetWeekday = weekday == 0 ? 6 : weekday - 1;
+    const adjustedDate = currentDate.add(mondayBasedTargetWeekday - mondayBasedCurrentWeekday, "day");
+
+    if (components.isCertain("year")) {
+        components.assign("year", adjustedDate.year());
+    } else {
+        components.imply("year", adjustedDate.year());
+    }
+    if (components.isCertain("month")) {
+        components.assign("month", adjustedDate.month() + 1);
+    } else {
+        components.imply("month", adjustedDate.month() + 1);
+    }
+    if (components.isCertain("day")) {
+        components.assign("day", adjustedDate.date());
+    } else {
+        components.imply("day", adjustedDate.date());
+    }
+}
+
+/**
  * Returns the parsing components at the weekday (considering the modifier). The time and timezone is assume to be
  * similar to the reference.
  * @param reference

@@ -79,6 +79,45 @@ test("Test - Single Expression - weekday with parentheses", function () {
     });
 });
 
+test("Test - Relative week prefix (来週/先週/今週)", function () {
+    const refDate = new Date(2024, 3 - 1, 5, 8); // Tuesday
+
+    testSingleCase(chrono.ja, "来週の火曜日", refDate, (result) => {
+        expect(result.text).toBe("来週の火曜日");
+        expect(result.start.get("year")).toBe(2024);
+        expect(result.start.get("month")).toBe(3);
+        expect(result.start.get("day")).toBe(12);
+        expect(result.start.get("weekday")).toBe(2);
+        expect(result.start.isCertain("weekday")).toBe(true);
+    });
+
+    testSingleCase(chrono.ja, "来週の月曜日", refDate, (result) => {
+        expect(result.text).toBe("来週の月曜日");
+        expect(result.start.get("day")).toBe(11);
+        expect(result.start.get("weekday")).toBe(1);
+    });
+
+    testSingleCase(chrono.ja, "先週の金曜日", refDate, (result) => {
+        expect(result.text).toBe("先週の金曜日");
+        expect(result.start.get("month")).toBe(3);
+        expect(result.start.get("day")).toBe(1);
+        expect(result.start.get("weekday")).toBe(5);
+    });
+
+    testSingleCase(chrono.ja, "今週の金曜日", refDate, (result) => {
+        expect(result.text).toBe("今週の金曜日");
+        expect(result.start.get("day")).toBe(8);
+        expect(result.start.get("weekday")).toBe(5);
+    });
+
+    // The "の" particle is optional.
+    testSingleCase(chrono.ja, "来週火曜日", refDate, (result) => {
+        expect(result.text).toBe("来週火曜日");
+        expect(result.start.get("day")).toBe(12);
+        expect(result.start.get("weekday")).toBe(2);
+    });
+});
+
 test("Test - forward dates only option", function () {
     testSingleCase(chrono.ja, "土曜日～月曜日", new Date(2016, 9 - 1, 2), { forwardDate: true }, (result) => {
         expect(result.index).toBe(0);
