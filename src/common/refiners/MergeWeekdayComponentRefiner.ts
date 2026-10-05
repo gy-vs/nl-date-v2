@@ -29,6 +29,19 @@ export default class MergeWeekdayComponentRefiner extends MergingRefiner {
             currentResult.start.isOnlyWeekdayComponent() &&
             !currentResult.start.isCertain("hour") &&
             nextResult.start.isCertain("day");
-        return weekdayThenNormalDate && textBetween.match(/^,?\s*$/) != null;
+        if (!weekdayThenNormalDate || textBetween.match(/^,?\s*$/) == null) {
+            return false;
+        }
+
+        // The weekday and the date should not contradict each other. When the following date
+        // carries its own weekday (e.g. relative dates like "in 3 weeks" or "2 weeks ago"),
+        // merge only when both weekdays agree, so "Friday 3 days later" is merged
+        // but "Saturday in 3 weeks" (a Tuesday) is not.
+        const nextWeekday = nextResult.start.get("weekday");
+        if (nextWeekday != null && nextWeekday !== currentResult.start.get("weekday")) {
+            return false;
+        }
+
+        return true;
     }
 }
